@@ -45,10 +45,10 @@ class NftablesNetnsRoutingRecipe(BaseEnrtRecipe, NftablesMixin):
         config.configure_and_track_ip(host1.sns.sr0, next(ipv4_addr))
         host1.sns.sr0.up_and_wait()
 
-        host1.cr0._ipr_wrapper("route", "add", dst=self.params.net2_ipv4,
-                               gateway=rc0_addr)
-        host1.sns.sr0._ipr_wrapper("route", "add", dst=self.params.net1_ipv4,
-                                   gateway=rs0_addr)
+        host1.cr0._ipr_wrapper("route", "add", dst=f"{self.params.net2_ipv4}",
+                               gateway=f"{rc0_addr}")
+        host1.sns.sr0._ipr_wrapper("route", "add", dst=f"{self.params.net1_ipv4}",
+                                   gateway=f"{rs0_addr}")
 
         host1.rns.run("sysctl -w net.ipv4.ip_forward=1")
 
