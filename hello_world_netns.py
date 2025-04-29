@@ -10,8 +10,8 @@ from lnst.Recipes.ENRT.NftablesNetnsRoutingRecipe import NftablesNetnsRoutingRec
 
 class HelloWorldNetnsRecipe(FlowMeasurementGenerator, NftablesNetnsRoutingRecipe):
 
-    def test_wide_configuration(self):
-        config = super().test_wide_configuration()
+    def test_wide_configuration(self, config):
+        config = super().test_wide_configuration(config)
         self.test_ifaces = self.configureNetns(config)
         return config
 
