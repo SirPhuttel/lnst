@@ -37,7 +37,7 @@ class SimpleNetnsRouterRecipe(SimpleNetworkRecipe):
                                   gateway=f"{pn0_addr}")
         host2.run("sysctl -w net.ipv4.ip_forward=1")
 
-        host1.eth0._ipr_wrapper("route", "add", dst=netns_ipv4,
+        host1.eth0._ipr_wrapper("route", "add", dst=self.netns_ipv4,
                                 gateway=f"{host2.eth0.ips()[-1]}")
         return config
 
