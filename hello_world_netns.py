@@ -8,7 +8,7 @@ from lnst.Recipes.ENRT.helpers import ip_endpoint_pairs
 from lnst.Common.IpAddress import Ip4Address
 from lnst.Recipes.ENRT.NftablesNetnsRoutingRecipe import NftablesNetnsRoutingRecipe
 
-class HelloWorldNetnsRecipe(FlowMeasurementGenerator, NftablesNetnsRoutingRecipe):
+class HelloWorldNetnsRecipe(NftablesNetnsRoutingRecipe, FlowMeasurementGenerator):
 
     rulescale = [ 0, 100, 1000, 10000 ]
 

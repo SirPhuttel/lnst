@@ -6,6 +6,7 @@ from lnst.RecipeCommon.endpoints import EndpointPair, IPEndpoint
 from lnst.Recipes.ENRT.helpers import ip_endpoint_pairs
 from lnst.Recipes.ENRT.BaseEnrtRecipe import EnrtConfiguration
 from lnst.RecipeCommon.Ping.PingEndpoints import PingEndpoints
+from lnst.Controller.NetNamespace import NetNamespace
 
 class SimpleNetnsRouterRecipe(SimpleNetworkRecipe):
     """
