@@ -1,3 +1,4 @@
+from collections.abc import Collection
 from lnst.Recipes.ENRT.SimpleNetworkRecipe import SimpleNetworkRecipe
 from lnst.Common.Parameters import IPv4NetworkParam, IPv6NetworkParam
 from lnst.Common.IpAddress import interface_addresses
