@@ -10,16 +10,22 @@ from lnst.Recipes.ENRT.NftablesNetnsRoutingRecipe import NftablesNetnsRoutingRec
 
 class HelloWorldNetnsRecipe(FlowMeasurementGenerator, NftablesNetnsRoutingRecipe):
 
-    def test_wide_configuration(self, config):
-        config = super().test_wide_configuration(config)
-        self.test_ifaces = self.configureNetns(config)
-        return config
+    rulescale = [ 0, 100, 1000, 10000 ]
 
-    def generate_ping_endpoints(self, config):
-        return [PingEndpoints(self.test_ifaces[0], self.test_ifaces[1])]
-
-    def generate_perf_endpoints(self, config: EnrtConfiguration) -> list[Collection[EndpointPair[IPEndpoint]]]:
-        return [ip_endpoint_pairs(config, self.test_ifaces)]
+    @property
+    def firewall_rulesets_generator(self):
+        base_ruleset = """
+table inet t {
+    chain input {
+        type filter hook input priority filter
+    }
+}"""
+        out = { self.matched.host2: base_ruleset }
+        for rs in self.rulescale:
+            for host in out.keys():
+                for i in range(rs):
+                    out[host] += "\nadd rule inet t input ip saddr 8.8.8.8 counter drop"
+            yield out
 
 ctl = Controller()
 recipe_instance = HelloWorldNetnsRecipe()
