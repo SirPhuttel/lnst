@@ -18,6 +18,7 @@ class SimpleNetnsRouterRecipe(SimpleNetworkRecipe):
     netns_ipv4 = IPv4NetworkParam(default="192.168.102.0/24")
 
     def test_wide_configuration(self, config):
+        host1 = self.matched.host1
         host2 = self.matched.host2
 
         host2.ns = NetNamespace("host2ns")
