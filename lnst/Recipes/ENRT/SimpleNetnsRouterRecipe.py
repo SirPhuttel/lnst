@@ -20,6 +20,7 @@ class SimpleNetnsRouterRecipe(SimpleNetworkRecipe):
     def test_wide_configuration(self, config):
         host1 = self.matched.host1
         host2 = self.matched.host2
+        config = super().test_wide_configuration(config)
 
         host2.ns = NetNamespace("host2ns")
 
@@ -30,15 +31,16 @@ class SimpleNetnsRouterRecipe(SimpleNetworkRecipe):
         pn0_addr = next(ipv4_addr)
         config.configure_and_track_ip(host2.pn0, pn0_addr)
         host2.pn0.up_and_wait()
-        config.configure_and_track_ip(host2.ns.np0, next(ipv4_addr))
+        np0_addr = next(ipv4_addr)
+        config.configure_and_track_ip(host2.ns.np0, np0_addr)
         host2.ns.np0.up_and_wait()
 
         host2.ns.np0._ipr_wrapper("route", "add", dst="default",
                                   gateway=f"{pn0_addr}")
         host2.run("sysctl -w net.ipv4.ip_forward=1")
 
-        host1.eth0._ipr_wrapper("route", "add", dst=self.netns_ipv4,
-                                gateway=f"{host2.eth0.ips()[-1]}")
+        host1.eth0._ipr_wrapper("route", "add", dst=f"{np0_addr},
+                                gateway=f"{host2.eth0.ips[-1]}")
         return config
 
     def generate_ping_endpoints(self, config):
