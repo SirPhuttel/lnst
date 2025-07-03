@@ -24,14 +24,24 @@ table inet t {
         type filter hook forward priority filter
     }
 }"""
+        devs = f"{self.matched.host2.eth0.name}, {self.matched.host2.pn0.name}"
+        flowtable_addon = f"""
+table inet t {
+    flowtable ft {
+        hook ingress priority 0;
+        devices = { """ + devs + """ }
+    }
+}"""
         out = { self.matched.host2: base_ruleset }
         for rs in self.rulescale:
             for host in out.keys():
                 for i in range(rs):
                     out[host] += "\nadd rule inet t forward ip saddr 8.8.8.8 counter drop"
             yield out
-        devs = f"{self.matched.host2.eth0.name}, {self.matched.host2.pn0.name}"
-        out[self.matched.host2] += "\nadd flowtable inet t ft { hook ingress priority 0; devices = { " + devs + " }; }"
+#        devs = f"{self.matched.host2.eth0.name}, {self.matched.host2.pn0.name}"
+#        out[self.matched.host2] += "\nadd flowtable inet t ft { hook ingress priority 0; devices = { " + devs + " }; }"
+#        out[self.matched.host2] += "\nadd rule inet t forward ct state established flow add @ft"
+        out[self.matched.host2] += "\n" + flowtable_addon
         out[self.matched.host2] += "\nadd rule inet t forward ct state established flow add @ft"
         yield out
 
@@ -43,6 +53,43 @@ table inet t {
                 for i in range(rs):
                     out[host] += "\nadd rule inet t forward ct state new,established ip saddr 8.8.8.8 drop"
             yield out
+        out[self.matched.host2] += "\n" + flowtable_addon
+        out[self.matched.host2] += "\nadd rule inet t forward ct state established flow add @ft"
+        yield out
+
+        for host in out.keys():
+            out[host] = base_ruleset
+
+        for rs in self.rulescale:
+            for host in out.keys():
+                for i in range(rs):
+                    out[host] += "\nadd rule inet t forward fib saddr . iif oif missing drop"
+            yield out
+        out[self.matched.host2] += "\n" + flowtable_addon
+        out[self.matched.host2] += "\nadd rule inet t forward ct state established flow add @ft"
+        yield out
+
+    def generate_sub_configuration_description(self, config):
+        desc = super().generate_sub_configuration_description(config)
+
+        for host, ruleset in config.firewall_rulesets.items():
+            rslines = ruleset.split("\n")
+            nlines = len(rslines)
+            desc.append(f"Firewall: ruleset with {nlines} lines on host {host}")
+            rules = [l for l in rslines if l.startswith("add rule")]
+            curidx = 0
+            rulesums = {rules[0]: 1}
+            for idx in range(1, len(rules)):
+                if rules[idx] == rules[curidx]:
+                    rulesums[rules[idx]] += 1
+                else:
+                    curidx = idx
+                    rulesums[rules[idx]] = 1
+            for k,v in rulesums:
+                desc.append(f"Firewall: ruleset has {v} times '{k}'")
+
+        return desc
+
 
 ctl = Controller()
 recipe_instance = HelloWorldNetnsRecipe(perf_tests=["udp_stream"],
