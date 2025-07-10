@@ -30,6 +30,10 @@ class SimpleNetnsRouterRecipe(SimpleNetworkRecipe):
                             |   +---------+ |
                             +---------------+
 
+    This is a derived class from SimpleNetworkRecipe which creates a netns on
+    the second host, enables forwarding into it and returns it as second
+    endpoint. Perf and ping tests will therefore excercise the second host's
+    routing path.
     """
     netns_ipv4 = IPv4NetworkParam(default="192.168.102.0/24")
     netns_ipv6 = IPv6NetworkParam(default="fc00:1::/64")
@@ -56,41 +60,37 @@ class SimpleNetnsRouterRecipe(SimpleNetworkRecipe):
 
         ipv4_addr = interface_addresses(self.params.netns_ipv4)
         ipv6_addr = interface_addresses(self.params.netns_ipv6)
-        pn0_addr = next(ipv4_addr)
-        pn0_addr6 = next(ipv6_addr)
-        config.configure_and_track_ip(host2.pn0, pn0_addr)
-        config.configure_and_track_ip(host2.pn0, pn0_addr6)
+        config.configure_and_track_ip(host2.pn0, next(ipv4_addr))
+        config.configure_and_track_ip(host2.pn0, next(ipv6_addr))
+        config.configure_and_track_ip(host2.ns.np0, next(ipv4_addr))
+        config.configure_and_track_ip(host2.ns.np0, next(ipv6_addr))
         host2.pn0.up_and_wait()
-        np0_addr = next(ipv4_addr)
-        np0_addr6 = next(ipv6_addr)
-        config.configure_and_track_ip(host2.ns.np0, np0_addr)
-        config.configure_and_track_ip(host2.ns.np0, np0_addr6)
         host2.ns.np0.up_and_wait()
 
-        host2.ns.np0._ipr_wrapper("route", "add", dst="default",
-                                  gateway=f"{pn0_addr}")
-        host2.ns.np0._ipr_wrapper("route", "add", dst="default",
-                                  gateway=f"{pn0_addr6}")
+        for gw in (self.params.netns_ipv4[1], self.params.netns_ipv6[1]):
+            host2.ns.np0._ipr_wrapper("route", "add", dst="default",
+                                      gateway=f"{gw}")
 
         host2.run("sysctl -w net.ipv4.ip_forward=1")
         host2.run("sysctl -w net.ipv6.conf.all.forwarding=1")
 
-        ipv4_addr = interface_addresses(self.params.net_ipv4)
-        next(ipv4_addr)
-        host1.eth0._ipr_wrapper("route", "add", dst=f"{np0_addr}",
-                                gateway=f"{next(ipv4_addr)}")
-        ipv6_addr = interface_addresses(self.params.net_ipv6)
-        next(ipv6_addr)
-        host1.eth0._ipr_wrapper("route", "add", dst=f"{np0_addr6}",
-                                gateway=f"{next(ipv6_addr)}")
+        host1.eth0._ipr_wrapper("route", "add",
+                                dst=f"{self.params.netns_ipv4[2]}",
+                                gateway=f"{self.params.net_ipv4[2]}")
+        host1.eth0._ipr_wrapper("route", "add",
+                                dst=f"{self.params.netns_ipv6[2]}",
+                                gateway=f"{self.params.net_ipv6[2]}")
 
-        host2.run("sysctl -w net.ipv6.conf.all.addr_gen_mode=0")
         host1.run("sysctl -w net.ipv6.conf.all.addr_gen_mode=0")
+        host2.run("sysctl -w net.ipv6.conf.all.addr_gen_mode=0")
 
         return config
 
     def generate_ping_endpoints(self, config):
-        return [PingEndpoints(self.matched.host1.eth0, self.matched.host2.ns.np0)]
+        return [PingEndpoints(self.matched.host1.eth0,
+                              self.matched.host2.ns.np0)]
 
-    def generate_perf_endpoints(self, config: EnrtConfiguration) -> list[Collection[EndpointPair[IPEndpoint]]]:
-        return [ip_endpoint_pairs(config, (self.matched.host1.eth0, self.matched.host2.ns.np0))]
+    def generate_perf_endpoints(self, config: EnrtConfiguration)
+                    -> list[Collection[EndpointPair[IPEndpoint]]]:
+        return [ip_endpoint_pairs(config, (self.matched.host1.eth0,
+                                           self.matched.host2.ns.np0))]
