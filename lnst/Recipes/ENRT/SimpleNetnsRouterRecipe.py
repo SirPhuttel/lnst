@@ -86,6 +86,11 @@ class SimpleNetnsRouterRecipe(SimpleNetworkRecipe):
 
         return config
 
+    def test_wide_deconfiguration(self, config):
+        config = super().test_wide_deconfiguration(config)
+        self.matched.host2.run("sysctl -w net.ipv4.ip_forward=0")
+        self.matched.host2.run("sysctl -w net.ipv6.conf.all.forwarding=0")
+
     def generate_ping_endpoints(self, config):
         return [PingEndpoints(self.matched.host1.eth0,
                               self.matched.host2.ns.np0)]
