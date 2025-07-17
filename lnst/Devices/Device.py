@@ -421,7 +421,8 @@ class Device(object, metaclass=DeviceMeta):
         except DeviceFeatureNotSupported:
             pass
 
-        self.down()
+        if self.name != "lo":
+            self.down()
         self.ip_flush()
         try:
             self._clear_tc_qdisc()
