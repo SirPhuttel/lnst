@@ -68,18 +68,14 @@ class SimpleNetnsRouterRecipe(SimpleNetworkRecipe):
         host2.ns.np0.up_and_wait()
 
         for gw in (self.params.netns_ipv4[1], self.params.netns_ipv6[1]):
-            host2.ns.np0._ipr_wrapper("route", "add", dst="default",
-                                      gateway=f"{gw}")
+            host2.ns.run(f"ip route add default via {gw}")
 
         host2.run("sysctl -w net.ipv4.ip_forward=1")
         host2.run("sysctl -w net.ipv6.conf.all.forwarding=1")
 
-        host1.eth0._ipr_wrapper("route", "add",
-                                dst=f"{self.params.netns_ipv4[2]}",
-                                gateway=f"{self.params.net_ipv4[2]}")
-        host1.eth0._ipr_wrapper("route", "add",
-                                dst=f"{self.params.netns_ipv6[2]}",
-                                gateway=f"{self.params.net_ipv6[2]}")
+        for dst, gw in [(self.params.netns_ipv4[2], self.params.net_ipv4[2]),
+                        (self.params.netns_ipv6[2], self.params.net_ipv6[2])]:
+            host1.run(f"ip route add {dst} via {gw}")
 
         host1.run("sysctl -w net.ipv6.conf.all.addr_gen_mode=0")
         host2.run("sysctl -w net.ipv6.conf.all.addr_gen_mode=0")
