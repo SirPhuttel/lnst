@@ -96,5 +96,6 @@ table inet t {
 ctl = Controller()
 #recipe_instance = HelloWorldNetnsRecipe(perf_tests=["udp_stream"],
 #                                        offload_combinations=[])
-recipe_instance = NftablesRuleScaleRecipe(perf_tests=["udp_stream"], offload_combinations=[], rule="fib saddr . iif oif missing drop", scale=1000)
+#recipe_instance = NftablesRuleScaleRecipe(perf_tests=["udp_stream"], offload_combinations=[], rule="fib saddr . iif oif missing drop", scale=1000)
+recipe_instance = NftablesRuleScaleRecipe(perf_tests=["tcp_stream"], offload_combinations=[], rule=["fib saddr . iif oif missing drop", "tcp dport 27374 counter drop"], scale=1000, extras=["add chain inet t foo", "add chain inet t bar"])
 ctl.run(recipe_instance)
